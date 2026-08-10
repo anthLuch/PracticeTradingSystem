@@ -51,47 +51,56 @@ Console.WriteLine($"GC Gen0: {GC.CollectionCount(0) - gc0Before}");
 Console.WriteLine($"GC Gen1: {GC.CollectionCount(1) - gc1Before}");
 Console.WriteLine($"GC Gen2: {GC.CollectionCount(2) - gc2Before}");
 
-// --- V2 Benchmark ---
-var matchingEngineV2 = new MatchingEngineServiceV2();
-var orderBookV2 = new OrderBookServiceV2(matchingEngineV2);
-
-rng = new Random(Seed);
-mid = 100m;
-nextId = 1;
-int totalTradesV2 = 0;
-
-int gc0BeforeV2 = GC.CollectionCount(0);
-int gc1BeforeV2 = GC.CollectionCount(1);
-int gc2BeforeV2 = GC.CollectionCount(2);
-
-var sw2 = System.Diagnostics.Stopwatch.StartNew();
-
-for (int i = 0; i < Orders; i++)
+await Task.Run(async () =>
 {
-    mid += rng.Next(0, 2) == 0 ? -1m : 1m;
-    Side side = rng.Next(0, 2) == 0 ? Side.Buy : Side.Sell;
-    decimal price = mid + rng.Next(-3, 4);
-    long quantity = rng.Next(1, 101);
+    // --- V2 Benchmark ---
+    IMatchingEngineServiceV2 matchingEngineV2 = new MatchingEngineServiceV2();
+    IOrderBookService orderBookV2 = new OrderBookServiceV2(matchingEngineV2);
+    OrderBookProcessing processor = new OrderBookProcessing(orderBookV2);
 
-    var order = new Order(id: nextId++, side: side, price: price, originalQuantity: quantity);
-    totalTradesV2 += orderBookV2.Submit(order).Count;
-}
+    var cts = new CancellationTokenSource();
+    _ = Task.Run(() => processor.StartAsync(cts.Token));
 
-sw2.Stop();
+    rng = new Random(Seed);
+    mid = 100m;
+    nextId = 1;
+    int totalTradesV2 = 0;
 
-Console.WriteLine("\n--- V2 Results ---");
-Console.WriteLine($"Elapsed: {sw2.Elapsed.TotalMilliseconds:F2}ms");
-Console.WriteLine($"Orders/sec: {Orders / sw2.Elapsed.TotalSeconds:F0}");
-Console.WriteLine($"Total Trades: {totalTradesV2}");
-Console.WriteLine($"BestBid: {orderBookV2.BestBid}");
-Console.WriteLine($"BestAsk: {orderBookV2.BestAsk}");
-Console.WriteLine($"OrderCount: {orderBookV2.OrderCount}");
-Console.WriteLine("Top 5 Bids:");
-foreach (var level in orderBookV2.GetDepth(Side.Buy, 5))
-    Console.WriteLine($"  Price: {level.price}, Qty: {level.quantity}");
-Console.WriteLine("Top 5 Asks:");
-foreach (var level in orderBookV2.GetDepth(Side.Sell, 5))
-    Console.WriteLine($"  Price: {level.price}, Qty: {level.quantity}");
-Console.WriteLine($"GC Gen0: {GC.CollectionCount(0) - gc0BeforeV2}");
-Console.WriteLine($"GC Gen1: {GC.CollectionCount(1) - gc1BeforeV2}");
-Console.WriteLine($"GC Gen2: {GC.CollectionCount(2) - gc2BeforeV2}");
+    int gc0BeforeV2 = GC.CollectionCount(0);
+    int gc1BeforeV2 = GC.CollectionCount(1);
+    int gc2BeforeV2 = GC.CollectionCount(2);
+
+    var sw2 = System.Diagnostics.Stopwatch.StartNew();
+
+    for (int i = 0; i < Orders; i++)
+    {
+        mid += rng.Next(0, 2) == 0 ? -1m : 1m;
+        Side side = rng.Next(0, 2) == 0 ? Side.Buy : Side.Sell;
+        decimal price = mid + rng.Next(-3, 4);
+        long quantity = rng.Next(1, 101);
+
+        var order = new Order(id: nextId++, side: side, price: price, originalQuantity: quantity);
+        List<Trade> trades = await processor.SubmitAsync(order);
+        totalTradesV2 += trades.Count;
+    }
+
+    sw2.Stop();
+
+    Console.WriteLine("\n--- V2 Results ---");
+    Console.WriteLine($"Elapsed: {sw2.Elapsed.TotalMilliseconds:F2}ms");
+    Console.WriteLine($"Orders/sec: {Orders / sw2.Elapsed.TotalSeconds:F0}");
+    Console.WriteLine($"Total Trades: {totalTradesV2}");
+    Console.WriteLine($"BestBid: {orderBookV2.BestBid}");
+    Console.WriteLine($"BestAsk: {orderBookV2.BestAsk}");
+    Console.WriteLine($"OrderCount: {orderBookV2.OrderCount}");
+    Console.WriteLine("Top 5 Bids:");
+    foreach (var level in orderBookV2.GetDepth(Side.Buy, 5))
+        Console.WriteLine($"  Price: {level.price}, Qty: {level.quantity}");
+    Console.WriteLine("Top 5 Asks:");
+    foreach (var level in orderBookV2.GetDepth(Side.Sell, 5))
+        Console.WriteLine($"  Price: {level.price}, Qty: {level.quantity}");
+    Console.WriteLine($"GC Gen0: {GC.CollectionCount(0) - gc0BeforeV2}");
+    Console.WriteLine($"GC Gen1: {GC.CollectionCount(1) - gc1BeforeV2}");
+    Console.WriteLine($"GC Gen2: {GC.CollectionCount(2) - gc2BeforeV2}");
+});
+

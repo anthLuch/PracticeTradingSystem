@@ -73,23 +73,25 @@ public class OrderBookTests
         Assert.Equal(1, orderBookService.OrderCount);
     }
 
+
     // Checks for FIFO ensuring the first in at the same price is sold
+    [Fact]
     public void SamePrice_OlderOrderTradesFirst()
     {
-        IMatchingEngineService matchingEngineService = new MatchingEngineService();
-        IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
+        IMatchingEngineService matchingEngineServiceV2 = new MatchingEngineService();
+        IOrderBookService orderBookServiceV2 = new OrderBookService(matchingEngineServiceV2);
 
-        orderBookService.Submit(new Order(id: 1, side: Side.Sell, price: 101m, originalQuantity: 5));
-        orderBookService.Submit(new Order(id: 2, side: Side.Sell, price: 101m, originalQuantity: 10));
+        orderBookServiceV2.Submit(new Order(id: 1, side: Side.Sell, price: 101m, originalQuantity: 5));
+        orderBookServiceV2.Submit(new Order(id: 2, side: Side.Sell, price: 101m, originalQuantity: 10));
         Order orderBuy = new Order(id: 3, side: Side.Buy, price: 101m, originalQuantity: 5);
 
-        List<Trade> trades = orderBookService.Submit(orderBuy);
+        List<Trade> trades = orderBookServiceV2.Submit(orderBuy);
 
         Assert.Equal(1, trades.Count);
         Assert.Equal(101m, trades[0].Price);
         Assert.Equal(1, trades[0].SellOrderId);
         Assert.Equal(5, trades[0].Quantity);
-        Assert.Equal(1, orderBookService.OrderCount);
+        Assert.Equal(1, orderBookServiceV2.OrderCount);
     }
 
     // Ensures prices are sold at the best price they can make

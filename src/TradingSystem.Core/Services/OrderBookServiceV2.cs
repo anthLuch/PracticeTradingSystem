@@ -8,7 +8,7 @@ using TradingSystem.Core.Models;
 
 namespace TradingSystem.Core.Services
 {
-    public class OrderBookServiceV2
+    public class OrderBookServiceV2 : IOrderBookService
     {
         private readonly IMatchingEngineServiceV2 _matchingEngine;
 
