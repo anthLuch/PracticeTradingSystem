@@ -18,11 +18,45 @@ namespace TradingSystem.Core.Services
             SortedDictionary<decimal, LinkedList<Order>> asks, ref int orderCount)
         {
             List<Trade> trades = new List<Trade>();
+
+            if (order.OrderType == OrderType.FOK)
+            {
+
+                long available = 0;
+                if (order.Side == Side.Buy)
+                {
+                    foreach(KeyValuePair<decimal, LinkedList<Order>> level in asks)
+                    {
+                        if (level.Key > order.Price) break;
+                        foreach (Order ord in level.Value)
+                        {
+                            available += ord.Quantity;
+                            if (available >= order.OriginalQuantity) break;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (KeyValuePair<decimal, LinkedList<Order>> level in bids)
+                    {
+                        if (level.Key < order.Price) break;
+                        foreach (Order ord in level.Value)
+                        {
+                            available += ord.Quantity;
+                            if (available >= order.OriginalQuantity) break;
+                        }
+                    }
+                }
+
+                if (available < order.OriginalQuantity) return new List<Trade>();
+
+            }
+
             switch (order.Side)
             {
                 case Side.Buy:
 
-                    while (order.Quantity > 0 && asks.Count > 0 && order.Price >= asks.First().Key)
+                    while (order.Quantity > 0 && asks.Count > 0 && (order.OrderType == OrderType.Market || order.Price >= asks.First().Key))
                     {
                         var bestLevel = asks.First();
 
@@ -57,7 +91,7 @@ namespace TradingSystem.Core.Services
                     break;
                 case Side.Sell:
 
-                    while (order.Quantity > 0 && bids.Count > 0 && order.Price <= bids.First().Key)
+                    while (order.Quantity > 0 && bids.Count > 0 && (order.OrderType == OrderType.Market || order.Price <= bids.First().Key))
                     {
                         var bestLevel = bids.First();
 

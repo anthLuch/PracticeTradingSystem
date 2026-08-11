@@ -17,6 +17,8 @@ namespace TradingSystem.Core.Services
 
         private readonly Dictionary<long, LinkedListNode<Order>> _orderIndex;
 
+        private readonly PositionTracker _positionTracker = new PositionTracker();
+
         private long _nextSequence = 0;
         public OrderBookService(IMatchingEngineService matchingEngine)
         {
@@ -45,7 +47,12 @@ namespace TradingSystem.Core.Services
 
             List<Trade> trades = _matchingEngine.Match(order, _bids, _asks, ref _orderCount);
 
-            if(!order.IsFilled)
+            foreach (Trade trade in trades)
+            {
+                _positionTracker.ProcessTrade(trade, order.Side);
+            }
+
+            if (!order.IsFilled && order.OrderType == OrderType.Limit)
             {
                 restOrder(order);
                 _orderCount++;

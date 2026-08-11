@@ -16,7 +16,7 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        Order order = new Order(id: 1, side: Side.Buy, price: 101m, originalQuantity: 5);
+        Order order = new Order(id: 1, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 5);
 
 
         List<Trade> trades = orderBookService.Submit(order);
@@ -35,9 +35,9 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        Order orderSell = new Order(id: 1, side: Side.Sell, price: 99m, originalQuantity: 5);
+        Order orderSell = new Order(id: 1, side: Side.Sell, orderType: OrderType.Limit, price: 99m, originalQuantity: 5);
         orderBookService.Submit(orderSell);
-        Order orderBuy = new Order(id: 2, side: Side.Buy, price: 101m, originalQuantity: 5);
+        Order orderBuy = new Order(id: 2, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 5);
 
         List<Trade> trades = orderBookService.Submit(orderBuy);
 
@@ -58,9 +58,9 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        Order orderSell = new Order(id: 1, side: Side.Sell, price: 101m, originalQuantity: 10);
+        Order orderSell = new Order(id: 1, side: Side.Sell, orderType: OrderType.Limit, price: 101m, originalQuantity: 10);
         orderBookService.Submit(orderSell);
-        Order orderBuy = new Order(id: 2, side: Side.Buy, price: 101m, originalQuantity: 4);
+        Order orderBuy = new Order(id: 2, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 4);
 
         List<Trade> trades = orderBookService.Submit(orderBuy);
 
@@ -81,9 +81,9 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineServiceV2 = new MatchingEngineService();
         IOrderBookService orderBookServiceV2 = new OrderBookService(matchingEngineServiceV2);
 
-        orderBookServiceV2.Submit(new Order(id: 1, side: Side.Sell, price: 101m, originalQuantity: 5));
-        orderBookServiceV2.Submit(new Order(id: 2, side: Side.Sell, price: 101m, originalQuantity: 10));
-        Order orderBuy = new Order(id: 3, side: Side.Buy, price: 101m, originalQuantity: 5);
+        orderBookServiceV2.Submit(new Order(id: 1, side: Side.Sell, orderType: OrderType.Limit, price: 101m, originalQuantity: 5));
+        orderBookServiceV2.Submit(new Order(id: 2, side: Side.Sell, orderType: OrderType.Limit, price: 101m, originalQuantity: 10));
+        Order orderBuy = new Order(id: 3, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 5);
 
         List<Trade> trades = orderBookServiceV2.Submit(orderBuy);
 
@@ -101,9 +101,9 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        Order orderSell = new Order(id: 1, side: Side.Sell, price: 99m, originalQuantity: 5);
+        Order orderSell = new Order(id: 1, side: Side.Sell, orderType: OrderType.Limit, price: 99m, originalQuantity: 5);
         orderBookService.Submit(orderSell);
-        Order orderBuy = new Order(id: 2, side: Side.Buy, price: 101m, originalQuantity: 5);
+        Order orderBuy = new Order(id: 2, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 5);
 
         List<Trade> trades = orderBookService.Submit(orderBuy);
 
@@ -123,9 +123,9 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        orderBookService.Submit(new Order(id: 1, side: Side.Sell, price: 100m, originalQuantity: 5));
-        orderBookService.Submit(new Order(id: 2, side: Side.Sell, price: 101m, originalQuantity: 10));
-        Order orderBuy = new Order(id: 3, side: Side.Buy, price: 101m, originalQuantity: 8);
+        orderBookService.Submit(new Order(id: 1, side: Side.Sell, orderType: OrderType.Limit, price: 100m, originalQuantity: 5));
+        orderBookService.Submit(new Order(id: 2, side: Side.Sell, orderType: OrderType.Limit, price: 101m, originalQuantity: 10));
+        Order orderBuy = new Order(id: 3, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 8);
 
         List<Trade> trades = orderBookService.Submit(orderBuy);
 
@@ -146,8 +146,8 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        orderBookService.Submit(new Order(id: 1, side: Side.Sell, price: 101m, originalQuantity: 5));
-        Order orderBuy = new Order(id: 2, side: Side.Buy, price: 99m, originalQuantity: 8);
+        orderBookService.Submit(new Order(id: 1, side: Side.Sell, orderType: OrderType.Limit, price: 101m, originalQuantity: 5));
+        Order orderBuy = new Order(id: 2, side: Side.Buy, orderType: OrderType.Limit, price: 99m, originalQuantity: 8);
 
         List<Trade> trades = orderBookService.Submit(orderBuy);
 
@@ -164,7 +164,7 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        orderBookService.Submit(new Order(id: 1, side: Side.Buy, price: 101m, originalQuantity: 5));
+        orderBookService.Submit(new Order(id: 1, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 5));
 
         Assert.Equal(101m, orderBookService.BestBid);
         Assert.Equal(1, orderBookService.OrderCount);
@@ -186,7 +186,7 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        orderBookService.Submit(new Order(id: 1, side: Side.Buy, price: 101m, originalQuantity: 5));
+        orderBookService.Submit(new Order(id: 1, side: Side.Buy, orderType: OrderType.Limit, price: 101m, originalQuantity: 5));
 
         bool result = orderBookService.Cancel(2);
         Assert.False(result);
@@ -200,12 +200,12 @@ public class OrderBookTests
         IMatchingEngineService matchingEngineService = new MatchingEngineService();
         IOrderBookService orderBookService = new OrderBookService(matchingEngineService);
 
-        orderBookService.Submit(new Order(id: 1, side: Side.Sell, price: 102m, originalQuantity: 5));
-        orderBookService.Submit(new Order(id: 2, side: Side.Sell, price: 101m, originalQuantity: 10));
-        orderBookService.Submit(new Order(id: 3, side: Side.Sell, price: 101m, originalQuantity: 5));
+        orderBookService.Submit(new Order(id: 1, side: Side.Sell, orderType: OrderType.Limit, price: 102m, originalQuantity: 5));
+        orderBookService.Submit(new Order(id: 2, side: Side.Sell, orderType: OrderType.Limit, price: 101m, originalQuantity: 10));
+        orderBookService.Submit(new Order(id: 3, side: Side.Sell, orderType: OrderType.Limit, price: 101m, originalQuantity: 5));
 
-        orderBookService.Submit(new Order(id: 7, side: Side.Buy, price: 99m, originalQuantity: 5));
-        orderBookService.Submit(new Order(id: 9, side: Side.Buy, price: 98m, originalQuantity: 10));
+        orderBookService.Submit(new Order(id: 7, side: Side.Buy, orderType: OrderType.Limit, price: 99m, originalQuantity: 5));
+        orderBookService.Submit(new Order(id: 9, side: Side.Buy, orderType: OrderType.Limit, price: 98m, originalQuantity: 10));
 
         var askDepth = orderBookService.GetDepth(Side.Sell, 2).ToList();
         var bidDepth = orderBookService.GetDepth(Side.Buy, 2).ToList();

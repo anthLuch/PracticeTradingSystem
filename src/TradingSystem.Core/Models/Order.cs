@@ -7,6 +7,8 @@ namespace TradingSystem.Core.Models
         public long Id { get; }
 
         public Side Side { get; }
+        
+        public OrderType OrderType { get; }
 
         public decimal Price { get; }
 
@@ -18,9 +20,9 @@ namespace TradingSystem.Core.Models
 
         public bool IsFilled => Quantity == 0;
 
-        public Order(long id, Side side, decimal price, long originalQuantity)
+        public Order(long id, Side side, OrderType orderType, decimal price, long originalQuantity)
         {
-            if (price <= 0)
+            if (orderType == OrderType.Limit && price <= 0)
             {
                 throw new ArgumentException("Price must be positive.", nameof(price));
             }
@@ -31,6 +33,7 @@ namespace TradingSystem.Core.Models
 
             Id = id;
             Side = side;
+            OrderType = orderType;
             Price = price;
             OriginalQuantity = originalQuantity;
             Quantity = originalQuantity;

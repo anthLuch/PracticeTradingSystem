@@ -11,6 +11,7 @@ namespace TradingSystem.Core.Services
     public class OrderBookServiceV2 : IOrderBookService
     {
         private readonly IMatchingEngineServiceV2 _matchingEngine;
+        private readonly PositionTracker _positionTracker = new PositionTracker();
 
         private const int MaxPrice = 100_000;
 
@@ -44,7 +45,13 @@ namespace TradingSystem.Core.Services
 
             List<Trade> trades = _matchingEngine.Match(order, _bids, _asks, ref _bestBid, ref _bestAsk, ref _orderCount);
 
-            if (!order.IsFilled)
+            foreach(Trade trade in trades)
+            {
+                _positionTracker.ProcessTrade(trade, order.Side);
+            }
+
+
+            if (!order.IsFilled && order.OrderType == OrderType.Limit)
             {
                 restOrder(order);
                 _orderCount++;

@@ -18,11 +18,45 @@ namespace TradingSystem.Core.Services
             LinkedList<Order>?[] asks, ref int bestBid, ref int bestAsk, ref int orderCount)
         {
             List<Trade> trades = new List<Trade>();
+
+            if(order.OrderType == OrderType.FOK)
+            {
+                long available = 0;
+                if (order.Side == Side.Buy)
+                {
+
+                    for (int i = bestAsk; i <= order.Price && i <= MaxPrice; i++)
+                    {
+                        if (asks[i] == null) continue;
+                        foreach(Order ord in asks[i])
+                        {
+                            available += ord.OriginalQuantity;
+                            if(available > ord.Quantity) break;
+                        }                      
+                    }
+
+                }
+                else
+                {
+                    for (int i = bestBid; i >= order.Price && i != 0; i++)
+                    {
+                        if (bids[i] == null) continue;
+                        foreach (Order ord in bids[i])
+                        {
+                            available += ord.OriginalQuantity;
+                            if (available > ord.Quantity) break;
+                        }
+                    }
+
+                }
+                if (available >= order.OriginalQuantity) return new List<Trade>();
+            }
+
             switch (order.Side)
             {
                 case Side.Buy:
 
-                    while (order.Quantity > 0 && bestAsk != -1 && bestAsk <= MaxPrice && order.Price >= (decimal)bestAsk)
+                    while (order.Quantity > 0 && bestAsk != -1 && bestAsk <= MaxPrice && (order.OrderType == OrderType.Market || order.Price >= (decimal)bestAsk))
                     {
                         var bestLevel = asks[bestAsk];
                         if (bestLevel == null) break;
@@ -62,7 +96,7 @@ namespace TradingSystem.Core.Services
                     break;
                 case Side.Sell:
 
-                    while (order.Quantity > 0 && bestBid != -1 && bestBid >= 0 & order.Price <= (decimal)bestBid)
+                    while (order.Quantity > 0 && bestBid != -1 && bestBid >= 0 && (order.OrderType == OrderType.Market || order.Price <= (decimal)bestBid))
                     {
                         if (bestBid == -1) break;
                         var bestLevel = bids[bestBid];
