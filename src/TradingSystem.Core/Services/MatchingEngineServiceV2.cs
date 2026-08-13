@@ -19,7 +19,7 @@ namespace TradingSystem.Core.Services
         {
             List<Trade> trades = new List<Trade>();
 
-            if(order.OrderType == OrderType.FOK)
+            if (order.OrderType == OrderType.FOK)
             {
                 long available = 0;
                 if (order.Side == Side.Buy)
@@ -28,11 +28,11 @@ namespace TradingSystem.Core.Services
                     for (int i = bestAsk; i <= order.Price && i <= MaxPrice; i++)
                     {
                         if (asks[i] == null) continue;
-                        foreach(Order ord in asks[i])
+                        foreach (Order ord in asks[i])
                         {
                             available += ord.OriginalQuantity;
-                            if(available > ord.Quantity) break;
-                        }                      
+                            if (available >= ord.Quantity) break;
+                        }
                     }
 
                 }
@@ -49,7 +49,7 @@ namespace TradingSystem.Core.Services
                     }
 
                 }
-                if (available >= order.OriginalQuantity) return new List<Trade>();
+                if (available < order.OriginalQuantity) return new List<Trade>();
             }
 
             switch (order.Side)
@@ -58,7 +58,7 @@ namespace TradingSystem.Core.Services
 
                     while (order.Quantity > 0 && bestAsk != -1 && bestAsk <= MaxPrice && (order.OrderType == OrderType.Market || order.Price >= (decimal)bestAsk))
                     {
-                        var bestLevel = asks[bestAsk];
+                        LinkedList<Order> bestLevel = asks[bestAsk];
                         if (bestLevel == null) break;
 
                         Order ord = bestLevel.First.Value;
