@@ -81,13 +81,13 @@ namespace TradingSystem.Api.Controllers
                 return StatusCode(500, ex.Message);
             }
 
-            return Ok(results.ToList()); 
+            return Ok(results.Select(r => new DepthLevel { Price = r.price, Quantity = r.level }).ToList());
         }
 
         [HttpGet("position")]
         public ActionResult GetPosition()
         {
-            PositionDTO pos = new PositionDTO
+            PositionResponse pos = new PositionResponse
             {
                 Position = _positionTracker.Position,
                 AverageEntryPrice = _positionTracker.AverageEntryPrice,

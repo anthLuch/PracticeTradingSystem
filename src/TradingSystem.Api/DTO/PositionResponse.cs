@@ -2,7 +2,7 @@
 
 namespace TradingSystem.Api.DTO
 {
-    public class PositionDTO
+    public class PositionResponse
     {
         public decimal Position { get; set;}
         public decimal AverageEntryPrice { get; set; }

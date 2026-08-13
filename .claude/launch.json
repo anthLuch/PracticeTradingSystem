@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "TradingSystem.Api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "src/TradingSystem.Api"],
+      "port": 5000,
+      "url": "http://localhost:5000"
+    }
+  ]
+}
