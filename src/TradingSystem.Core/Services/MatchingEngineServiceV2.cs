@@ -38,7 +38,7 @@ namespace TradingSystem.Core.Services
                 }
                 else
                 {
-                    for (int i = bestBid; i >= order.Price && i != 0; i++)
+                    for (int i = bestBid; i >= order.Price && i != 0; i--)
                     {
                         if (bids[i] == null) continue;
                         foreach (Order ord in bids[i])
@@ -72,8 +72,10 @@ namespace TradingSystem.Core.Services
                             TradeId: _nextTradeId++,
                             BuyOrderId: order.Id,
                             SellOrderId: ord.Id,
+                            Symbol: order.Symbol,
                             Price: ord.Price,
-                            Quantity: matchingQuantity
+                            Quantity: matchingQuantity,
+                            ExecutedAt: DateTime.UtcNow
                             ));
 
                         if (ord.IsFilled)
@@ -113,8 +115,10 @@ namespace TradingSystem.Core.Services
                             TradeId: _nextTradeId++,
                             BuyOrderId: ord.Id,
                             SellOrderId: order.Id,
+                            Symbol: order.Symbol,
                             Price: ord.Price,
-                            Quantity: matchingQuantity
+                            Quantity: matchingQuantity,
+                            ExecutedAt: DateTime.UtcNow
                             ));
 
                         if (ord.IsFilled)
@@ -126,7 +130,7 @@ namespace TradingSystem.Core.Services
                         if (bestLevel.Count == 0)
                         {
                             bids[bestBid] = null;
-                            while (bestBid >= 0 && asks[bestBid] == null)
+                            while (bestBid >= 0 && bids[bestBid] == null)
                             {
                                 bestBid--;
                             }

@@ -71,8 +71,10 @@ namespace TradingSystem.Core.Services
                             TradeId: _nextTradeId++,
                             BuyOrderId: order.Id,
                             SellOrderId: ord.Id,
+                            Symbol: order.Symbol,
                             Price: ord.Price,
-                            Quantity: matchingQuantity
+                            Quantity: matchingQuantity,
+                            ExecutedAt: DateTime.UtcNow
                             ));
 
                         if (ord.IsFilled)
@@ -106,8 +108,10 @@ namespace TradingSystem.Core.Services
                             TradeId: _nextTradeId++,
                             BuyOrderId: ord.Id,
                             SellOrderId: order.Id,
+                            Symbol: order.Symbol,
                             Price: ord.Price,
-                            Quantity: matchingQuantity
+                            Quantity: matchingQuantity,
+                            ExecutedAt: DateTime.UtcNow
                             ));
 
                         if (ord.IsFilled)

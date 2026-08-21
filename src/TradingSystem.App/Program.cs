@@ -30,7 +30,7 @@ for (int i = 0; i < Orders; i++)
     decimal price = mid + rng.Next(-3, 4);
     long quantity = rng.Next(1, 101);
 
-    var order = new Order(id: nextId++, side: side, orderType: OrderType.Limit, price: price, originalQuantity: quantity);
+    var order = new Order(id: nextId++, side: side, orderType: OrderType.Limit, symbol: "AAPL", price: price, originalQuantity: quantity, createdAt: DateTime.UtcNow);
     List<Trade> trades = orderBookV1.Submit(order);
 
     foreach (Trade trade in trades)
@@ -92,7 +92,7 @@ for (int i = 0; i < Orders; i++)
     decimal price = mid + rng.Next(-3, 4);
     long quantity = rng.Next(1, 101);
 
-    var order = new Order(id: nextId++, side: side, orderType: OrderType.Limit, price: price, originalQuantity: quantity);
+    var order = new Order(id: nextId++, side: side, orderType: OrderType.Limit, symbol: "AAPL", price: price, originalQuantity: quantity, createdAt: DateTime.UtcNow);
     List<Trade> trades = orderBookV2.Submit(order);
     foreach(Trade trade in trades)
     {

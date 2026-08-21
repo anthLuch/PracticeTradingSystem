@@ -10,8 +10,10 @@ namespace TradingSystem.Core.Models
         long TradeId,
         long BuyOrderId,
         long SellOrderId,
+        string Symbol,
         decimal Price,
-        long Quantity
+        long Quantity,
+        DateTime ExecutedAt
     );
 
 }

@@ -12,29 +12,34 @@ namespace TradingSystem.Api.Controllers
     {
         private readonly IOrderBookService _orderBookService;
         private readonly PositionTracker _positionTracker;
+        private readonly OrderBookProcessing _orderBookProcessing;
         private static long _nextId = 0;
 
-        public OrderController(IOrderBookService orderBookService, PositionTracker positionTracker)
+        public OrderController(IOrderBookService orderBookService, PositionTracker positionTracker, OrderBookProcessing orderBookProcessing)
         {
             _orderBookService = orderBookService;
             _positionTracker = positionTracker;
+            _orderBookProcessing = orderBookProcessing;
+
         }
 
         [HttpPost]
-        public ActionResult SubmitOrderRequest([FromBody] OrderRequest request)
+        public async Task<ActionResult> SubmitOrderRequest([FromBody] OrderRequest request)
         {
             List<Trade> trades = new List<Trade>();
             Order order = new Order(
                 id: Interlocked.Increment(ref _nextId),
                 side: request.Side,
                 price: request.Price,
+                symbol: "AAPL",
                 orderType: request.OrderType,
-                originalQuantity: request.OriginalQuantity
+                originalQuantity: request.OriginalQuantity,
+                createdAt: DateTime.UtcNow
                 );
 
             try
             {
-                trades = _orderBookService.Submit(order);
+                trades = await _orderBookProcessing.SubmitAsync(order);
 
                 foreach(Trade trade in trades)
                 {

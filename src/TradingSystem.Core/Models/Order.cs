@@ -8,6 +8,8 @@ namespace TradingSystem.Core.Models
 
         public Side Side { get; }
         
+        public string Symbol { get; }
+        
         public OrderType OrderType { get; }
 
         public decimal Price { get; }
@@ -18,9 +20,11 @@ namespace TradingSystem.Core.Models
 
         public long Sequence { get; internal set; }
 
+        public DateTime CreatedAt {  get; }
+
         public bool IsFilled => Quantity == 0;
 
-        public Order(long id, Side side, OrderType orderType, decimal price, long originalQuantity)
+        public Order(long id, Side side, string symbol, OrderType orderType, decimal price, long originalQuantity, DateTime createdAt)
         {
             if (orderType == OrderType.Limit && price <= 0)
             {
@@ -33,10 +37,12 @@ namespace TradingSystem.Core.Models
 
             Id = id;
             Side = side;
+            Symbol = symbol;
             OrderType = orderType;
             Price = price;
             OriginalQuantity = originalQuantity;
             Quantity = originalQuantity;
+            CreatedAt = createdAt;
         }
 
         internal void Filled(long amount)
