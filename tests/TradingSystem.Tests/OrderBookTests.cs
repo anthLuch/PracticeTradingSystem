@@ -13,8 +13,8 @@ public class OrderBookTests
     [Fact]
     public void NoMatch_WhenBookIsEmpty_OrderRests()
     {
-        IMatchingEngineServiceV2 matchingEngineService = new MatchingEngineServiceV2();
-        IOrderBookService orderBookService = new OrderBookServiceV2(matchingEngineService);
+        IMatchingEngineServiceV2 matchingEngineService = new MatchingEngineServiceV2(0.1m);
+        IOrderBookService orderBookService = new OrderBookServiceV2(matchingEngineService, 0.1m);
 
         Order order = new Order(id: 1, side: Side.Buy, symbol: "AAPL", orderType: OrderType.Limit, price: 101m, originalQuantity: 5, createdAt: DateTime.UtcNow);
 

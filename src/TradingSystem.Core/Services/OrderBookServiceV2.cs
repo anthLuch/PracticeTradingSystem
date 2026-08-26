@@ -13,23 +13,34 @@ namespace TradingSystem.Core.Services
         private readonly IMatchingEngineServiceV2 _matchingEngine;
         private readonly PositionTracker _positionTracker = new PositionTracker();
 
-        private const int MaxPrice = 100_000;
+        private readonly int _scale;
+        private readonly int _maxPrice;
 
-        private readonly LinkedList<Order>?[] _bids = new LinkedList<Order>?[MaxPrice + 1];
-        private readonly LinkedList<Order>?[] _asks = new LinkedList<Order>?[MaxPrice + 1];
+        private readonly LinkedList<Order>?[] _bids;
+        private readonly LinkedList<Order>?[] _asks;
 
         private int _bestBid = -1;
         private int _bestAsk = -1;
+        private int priceScale = 0;
 
-        public decimal? BestBid => _bestBid == -1 ? null : (decimal)_bestBid;
-        public decimal? BestAsk => _bestAsk == -1 ? null : (decimal)_bestAsk;
+
+        public decimal PriceIncrement { get; }
+        public decimal? BestBid => _bestBid == -1 ? null : (decimal)_bestBid / _scale;
+        public decimal? BestAsk => _bestAsk == -1 ? null : (decimal)_bestAsk / _scale;
 
         private readonly Dictionary<long, LinkedListNode<Order>> _orderIndex;
 
         private long _nextSequence = 0;
-        public OrderBookServiceV2(IMatchingEngineServiceV2 matchingEngine)
+
+        public OrderBookServiceV2(IMatchingEngineServiceV2 matchingEngine, decimal priceIncrement)
         {
             _matchingEngine = matchingEngine;
+            PriceIncrement = priceIncrement;
+            _scale = (int)Math.Round(1m / priceIncrement);
+            _maxPrice = 100_000 * _scale;
+
+            _bids = new LinkedList<Order>?[_maxPrice + 1];
+            _asks = new LinkedList<Order>?[_maxPrice + 1];
 
             _orderIndex = new Dictionary<long, LinkedListNode<Order>>();
         }
@@ -40,7 +51,7 @@ namespace TradingSystem.Core.Services
 
         public List<Trade> Submit(Order order)
         {
-
+            priceScale = (int)(order.Price * _scale);
             order.Sequence = _nextSequence++;
 
             List<Trade> trades = _matchingEngine.Match(order, _bids, _asks, ref _bestBid, ref _bestAsk, ref _orderCount);
@@ -64,28 +75,33 @@ namespace TradingSystem.Core.Services
         {
             var book = order.Side == Side.Buy ? _bids : _asks;
 
-            if (book[(int)order.Price] == null)
+            if (book[priceScale] == null)
             {
-                book[(int)order.Price] = new LinkedList<Order>();
+                book[priceScale] = new LinkedList<Order>();
             }
 
-            LinkedListNode<Order> node = book[(int)order.Price].AddLast(order);
+            LinkedListNode<Order> node = book[priceScale].AddLast(order);
             _orderIndex.Add(order.Id, node);
 
             if (order.Side == Side.Buy)
             {
-                if(_bestBid == -1 || (int)order.Price > _bestBid)
+                if(_bestBid == -1 || priceScale > _bestBid)
                 {
-                    _bestBid = (int)order.Price;
+                    _bestBid = priceScale;
                 }
             }
             else
             {
-                if (_bestAsk == -1 || (int)order.Price < _bestAsk)
+                if (_bestAsk == -1 || priceScale < _bestAsk)
                 {
-                    _bestAsk = (int)order.Price;
+                    _bestAsk = priceScale;
                 }
             }
+        }
+
+        public Order GetOrder(long orderId)
+        {
+            return _orderIndex.TryGetValue(orderId, out LinkedListNode<Order> node) ? node.Value: null;
         }
 
         public bool Cancel(long Id)
@@ -96,12 +112,13 @@ namespace TradingSystem.Core.Services
             }
 
             LinkedListNode<Order> order = _orderIndex[Id];
+            priceScale = (int)(order.Value.Price * _scale);
 
             if (order.Value.Side == Side.Buy)
             {
-                _bids[(int)order.Value.Price].Remove(order);
-                if (_bids[(int)order.Value.Price].Count == 0) _bids[(int)order.Value.Price] = null;
-                if ((int)order.Value.Price == _bestBid)
+                _bids[priceScale].Remove(order);
+                if (_bids[priceScale].Count == 0) _bids[priceScale] = null;
+                if (priceScale == _bestBid)
                 {
                     while (_bestBid >= 0 && _bids[_bestBid] == null)
                         _bestBid--;
@@ -109,11 +126,11 @@ namespace TradingSystem.Core.Services
             }
             else
             {
-                _asks[(int)order.Value.Price].Remove(order);
-                if (_asks[(int)order.Value.Price].Count == 0) _asks[(int)order.Value.Price] = null;
-                if ((int)order.Value.Price == _bestAsk)
+                _asks[priceScale].Remove(order);
+                if (_asks[priceScale].Count == 0) _asks[priceScale] = null;
+                if (priceScale == _bestAsk)
                 {
-                    while (_bestAsk <= MaxPrice && _asks[_bestAsk] == null)
+                    while (_bestAsk <= _maxPrice && _asks[_bestAsk] == null)
                         _bestAsk++;
                 }
             }
@@ -130,25 +147,25 @@ namespace TradingSystem.Core.Services
 
             if(side == Side.Buy)
             {
-                for(int i = MaxPrice; i >= 0; i--)
+                for(int i = _maxPrice; i >= 0; i--)
                 {
                     if (count >= depth) yield break;
                     if (_bids[i] == null) continue;
 
                     long totalq = _bids[i].Sum(o => o.Quantity);
-                    yield return ((decimal)i, totalq);
+                    yield return ((decimal)i / _scale, totalq);
                     count++;
                 }
             }
             else
             {
-                for (int i = 0; i <= MaxPrice; i++)
+                for (int i = 0; i <= _maxPrice; i++)
                 {
                     if (count >= depth) yield break;
                     if (_asks[i] == null) continue;
 
                     long totalQ = _asks[i].Sum(o => o.Quantity);
-                    yield return ((decimal)i, totalQ);
+                    yield return ((decimal)i / _scale, totalQ);
                     count++;
                 }
 

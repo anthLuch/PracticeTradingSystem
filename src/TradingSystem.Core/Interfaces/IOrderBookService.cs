@@ -18,9 +18,12 @@ namespace TradingSystem.Core.Interfaces
 
         List<Trade> Submit(Order order);
 
+        Order? GetOrder(long orderId);
+
         bool Cancel(long orderId);
 
         IEnumerable<(decimal price, long quantity)> GetDepth(Side side, int levels);
+
 
 
     }

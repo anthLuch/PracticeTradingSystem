@@ -74,6 +74,11 @@ namespace TradingSystem.Core.Services
             _orderIndex.Add(order.Id, node);
         }
 
+        public Order GetOrder(long orderId)
+        {
+            return _orderIndex.TryGetValue(orderId, out LinkedListNode<Order> node) ? node.Value : null;
+        }
+
         public bool Cancel(long Id)
         {
             if(!_orderIndex.ContainsKey(Id))

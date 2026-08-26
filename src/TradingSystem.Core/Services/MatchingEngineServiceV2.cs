@@ -12,7 +12,14 @@ namespace TradingSystem.Core.Services
 {
     public class MatchingEngineServiceV2 : IMatchingEngineServiceV2
     {
-        private const int MaxPrice = 100_000;
+        private readonly int _scale;
+        private readonly int _maxPrice;
+
+        public MatchingEngineServiceV2(decimal priceIncrement)
+        {
+            _scale = (int)Math.Round(1m / priceIncrement);
+            _maxPrice = 100_000 * _scale;
+        }
         private long _nextTradeId = 1;
         public List<Trade> Match(Order order, LinkedList<Order>?[] bids,
             LinkedList<Order>?[] asks, ref int bestBid, ref int bestAsk, ref int orderCount)
@@ -25,7 +32,7 @@ namespace TradingSystem.Core.Services
                 if (order.Side == Side.Buy)
                 {
 
-                    for (int i = bestAsk; i <= order.Price && i <= MaxPrice; i++)
+                    for (int i = bestAsk; i <= order.Price * _scale && i <= _maxPrice; i++)
                     {
                         if (asks[i] == null) continue;
                         foreach (Order ord in asks[i])
@@ -38,7 +45,7 @@ namespace TradingSystem.Core.Services
                 }
                 else
                 {
-                    for (int i = bestBid; i >= order.Price && i != 0; i--)
+                    for (int i = bestBid; i >= order.Price * _scale && i != 0; i--)
                     {
                         if (bids[i] == null) continue;
                         foreach (Order ord in bids[i])
@@ -56,7 +63,7 @@ namespace TradingSystem.Core.Services
             {
                 case Side.Buy:
 
-                    while (order.Quantity > 0 && bestAsk != -1 && bestAsk <= MaxPrice && (order.OrderType == OrderType.Market || order.Price >= (decimal)bestAsk))
+                    while (order.Quantity > 0 && bestAsk != -1 && bestAsk <= _maxPrice && (order.OrderType == OrderType.Market || order.Price >= (decimal)bestAsk / _scale))
                     {
                         LinkedList<Order> bestLevel = asks[bestAsk];
                         if (bestLevel == null) break;
@@ -87,7 +94,7 @@ namespace TradingSystem.Core.Services
                         if (bestLevel.Count == 0)
                         {
                             asks[bestAsk] = null;
-                            while (bestAsk <= MaxPrice && asks[bestAsk] == null)
+                            while (bestAsk <= _maxPrice && asks[bestAsk] == null)
                             {
                                 bestAsk++;
                             }
@@ -98,7 +105,7 @@ namespace TradingSystem.Core.Services
                     break;
                 case Side.Sell:
 
-                    while (order.Quantity > 0 && bestBid != -1 && bestBid >= 0 && (order.OrderType == OrderType.Market || order.Price <= (decimal)bestBid))
+                    while (order.Quantity > 0 && bestBid != -1 && bestBid >= 0 && (order.OrderType == OrderType.Market || order.Price <= (decimal)bestBid / _scale))
                     {
                         if (bestBid == -1) break;
                         var bestLevel = bids[bestBid];

@@ -66,8 +66,8 @@ Console.WriteLine($"GC Gen2: {GC.CollectionCount(2) - gc2Before}");
 //await Task.Run(async () =>
 //{
     // --- V2 Benchmark ---
-IMatchingEngineServiceV2 matchingEngineV2 = new MatchingEngineServiceV2();
-IOrderBookService orderBookV2 = new OrderBookServiceV2(matchingEngineV2);
+IMatchingEngineServiceV2 matchingEngineV2 = new MatchingEngineServiceV2(0.1m);
+IOrderBookService orderBookV2 = new OrderBookServiceV2(matchingEngineV2, 0.1m);
 OrderBookProcessing processor = new OrderBookProcessing(orderBookV2);
 PositionTracker trackerV2 = new PositionTracker();
 

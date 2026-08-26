@@ -1,18 +1,35 @@
+using Microsoft.Extensions.Options;
+using TradingSystem.Api;
 using TradingSystem.Api.Controllers;
 using TradingSystem.Core.Interfaces;
 using TradingSystem.Core.Services;
+using TradingSystem.Data.Interfaces;
+using TradingSystem.Data.Repositories;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
+
 builder.Services.AddOpenApi();
 
-builder.Services.AddSingleton<IMatchingEngineServiceV2, MatchingEngineServiceV2>();
-builder.Services.AddSingleton<IOrderBookService, OrderBookServiceV2>();
+builder.Services.AddSingleton<IMatchingEngineServiceV2>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<TradingOptions>>();
+    return new MatchingEngineServiceV2(options.Value.PriceIncrement);
+});
+builder.Services.AddSingleton<IOrderBookService>(sp =>
+{
+    var options = sp.GetRequiredService<IOptions<TradingOptions>>();
+    var matchingEngine = sp.GetRequiredService<IMatchingEngineServiceV2>();
+    return new OrderBookServiceV2(matchingEngine, options.Value.PriceIncrement);
+});
+
 builder.Services.AddSingleton<OrderBookProcessing>();
 builder.Services.AddSingleton<PositionTracker>();
+
+builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<ITradeRespository, TradeRepository>();
+builder.Services.Configure<TradingOptions>(builder.Configuration.GetSection("Trading"));
 
 builder.Services.AddControllers();
 

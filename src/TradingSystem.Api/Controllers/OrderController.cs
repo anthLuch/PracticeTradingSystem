@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 using TradingSystem.Api.DTO;
 using TradingSystem.Core.Interfaces;
 using TradingSystem.Core.Models;
 using TradingSystem.Core.Services;
+using TradingSystem.Data.Interfaces;
 
 namespace TradingSystem.Api.Controllers
 {
@@ -13,13 +15,18 @@ namespace TradingSystem.Api.Controllers
         private readonly IOrderBookService _orderBookService;
         private readonly PositionTracker _positionTracker;
         private readonly OrderBookProcessing _orderBookProcessing;
+        private readonly IOrderRepository _orderRepository;
+        private readonly ITradeRespository _tradeRespository;
+
         private static long _nextId = 0;
 
-        public OrderController(IOrderBookService orderBookService, PositionTracker positionTracker, OrderBookProcessing orderBookProcessing)
+        public OrderController(IOrderBookService orderBookService, PositionTracker positionTracker, OrderBookProcessing orderBookProcessing, IOrderRepository orderRepository, ITradeRespository tradeRespository)
         {
             _orderBookService = orderBookService;
             _positionTracker = positionTracker;
             _orderBookProcessing = orderBookProcessing;
+            _orderRepository = orderRepository;
+            _tradeRespository = tradeRespository;
 
         }
 
@@ -41,8 +48,22 @@ namespace TradingSystem.Api.Controllers
             {
                 trades = await _orderBookProcessing.SubmitAsync(order);
 
-                foreach(Trade trade in trades)
+                await _orderRepository.InsertAsync(order);
+
+                foreach (Trade trade in trades)
                 {
+                    Order updatedOrder = null;
+                    if(order.Side == Side.Buy)
+                    {
+                        updatedOrder = _orderBookService.GetOrder(trade.SellOrderId);
+                    }
+                    else
+                    {
+                        updatedOrder = _orderBookService.GetOrder(trade.BuyOrderId);
+                    }
+
+                    await _orderRepository.UpdateAsync(updatedOrder.Id, updatedOrder.Quantity, updatedOrder.IsFilled);
+                    await _tradeRespository.InsertAsync(trade);
                     _positionTracker.ProcessTrade(trade, order.Side);
                 }
                 
@@ -56,7 +77,7 @@ namespace TradingSystem.Api.Controllers
         }
 
         [HttpDelete("{orderId}")]
-        public ActionResult CancelOrder(long orderId)
+        public async Task<ActionResult> CancelOrder(long orderId)
         {
             try
             {
@@ -64,6 +85,8 @@ namespace TradingSystem.Api.Controllers
                 {
                     return NotFound("Order was unable to be cancelled");
                 }
+
+                await _orderRepository.UpdateStatusAsync(orderId, "Cancelled");
             }
             catch( Exception ex ) 
             {
