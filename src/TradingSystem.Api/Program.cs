@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using TradingSystem.Api;
 using TradingSystem.Api.Controllers;
+using TradingSystem.Api.Services;
 using TradingSystem.Core.Interfaces;
 using TradingSystem.Core.Services;
 using TradingSystem.Data.Interfaces;
@@ -27,8 +28,9 @@ builder.Services.AddSingleton<IOrderBookService>(sp =>
 builder.Services.AddSingleton<OrderBookProcessing>();
 builder.Services.AddSingleton<PositionTracker>();
 
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
-builder.Services.AddScoped<ITradeRespository, TradeRepository>();
+builder.Services.AddSingleton<IOrderRepository, OrderRepository>();
+builder.Services.AddSingleton<ITradeRespository, TradeRepository>();
+builder.Services.AddSingleton<OrderRepositoryProcessor>();
 builder.Services.Configure<TradingOptions>(builder.Configuration.GetSection("Trading"));
 
 builder.Services.AddControllers();
@@ -50,6 +52,9 @@ app.UseCors();
 
 var processor = app.Services.GetRequiredService<OrderBookProcessing>();
 _ = processor.StartAsync(app.Lifetime.ApplicationStopping);
+
+var repositoryProcessor = app.Services.GetRequiredService<OrderRepositoryProcessor>();
+_ = repositoryProcessor.StartAsync(app.Lifetime.ApplicationStopping);
 
 app.MapControllers();
 

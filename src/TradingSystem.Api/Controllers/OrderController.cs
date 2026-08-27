@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 using TradingSystem.Api.DTO;
+using TradingSystem.Api.Services;
 using TradingSystem.Core.Interfaces;
 using TradingSystem.Core.Models;
 using TradingSystem.Core.Services;
@@ -15,18 +16,21 @@ namespace TradingSystem.Api.Controllers
         private readonly IOrderBookService _orderBookService;
         private readonly PositionTracker _positionTracker;
         private readonly OrderBookProcessing _orderBookProcessing;
+        private readonly OrderRepositoryProcessor _orderRepositoryProcessor;
         private readonly IOrderRepository _orderRepository;
         private readonly ITradeRespository _tradeRespository;
 
         private static long _nextId = 0;
 
-        public OrderController(IOrderBookService orderBookService, PositionTracker positionTracker, OrderBookProcessing orderBookProcessing, IOrderRepository orderRepository, ITradeRespository tradeRespository)
+        public OrderController(IOrderBookService orderBookService, PositionTracker positionTracker, OrderBookProcessing orderBookProcessing,
+                                IOrderRepository orderRepository, ITradeRespository tradeRespository, OrderRepositoryProcessor orderRepositoryProcessor)
         {
             _orderBookService = orderBookService;
             _positionTracker = positionTracker;
             _orderBookProcessing = orderBookProcessing;
             _orderRepository = orderRepository;
             _tradeRespository = tradeRespository;
+            _orderRepositoryProcessor = orderRepositoryProcessor;
 
         }
 
@@ -34,6 +38,7 @@ namespace TradingSystem.Api.Controllers
         public async Task<ActionResult> SubmitOrderRequest([FromBody] OrderRequest request)
         {
             List<Trade> trades = new List<Trade>();
+            List<Order> updatedRestingOrders = new List<Order>();
             Order order = new Order(
                 id: Interlocked.Increment(ref _nextId),
                 side: request.Side,
@@ -48,25 +53,20 @@ namespace TradingSystem.Api.Controllers
             {
                 trades = await _orderBookProcessing.SubmitAsync(order);
 
-                await _orderRepository.InsertAsync(order);
-
                 foreach (Trade trade in trades)
                 {
-                    Order updatedOrder = null;
-                    if(order.Side == Side.Buy)
-                    {
-                        updatedOrder = _orderBookService.GetOrder(trade.SellOrderId);
-                    }
-                    else
-                    {
-                        updatedOrder = _orderBookService.GetOrder(trade.BuyOrderId);
-                    }
+                    Order restingOrder = null;
+                    long id = order.Side == Side.Buy ? trade.SellOrderId : trade.BuyOrderId;
 
-                    await _orderRepository.UpdateAsync(updatedOrder.Id, updatedOrder.Quantity, updatedOrder.IsFilled);
-                    await _tradeRespository.InsertAsync(trade);
+                    restingOrder = _orderBookService.GetOrder(id);
+
+                    updatedRestingOrders.Add(restingOrder);
+                    
                     _positionTracker.ProcessTrade(trade, order.Side);
                 }
-                
+
+                await _orderRepositoryProcessor.QueueAsync(order, trades, updatedRestingOrders);
+
             }
             catch(Exception ex)
             {
