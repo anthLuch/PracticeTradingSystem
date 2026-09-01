@@ -1,4 +1,5 @@
 using TradingSystem.Core.Models;
+using TradingSystem.Data.Models;
 
 namespace TradingSystem.Data.Interfaces
 {
@@ -9,5 +10,7 @@ namespace TradingSystem.Data.Interfaces
         Task UpdateStatusAsync(long orderId, string status);
 
         Task UpdateAsync(long orderId, long Quantity, bool status);
+
+        Task<IEnumerable<OrderHistoryRecord>> GetAllHistoryAsync(string? symbol, int? limit);
     }
 }

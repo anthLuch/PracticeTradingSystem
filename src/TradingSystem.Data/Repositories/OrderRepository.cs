@@ -6,6 +6,7 @@ using TradingSystem.Data.Interfaces;
 using TradingSystem.Core.Models;
 using System.Data;
 using Microsoft.Data.SqlClient;
+using TradingSystem.Data.Models;
 
 
 namespace TradingSystem.Data.Repositories
@@ -73,6 +74,19 @@ namespace TradingSystem.Data.Repositories
             using IDbConnection connection = new SqlConnection(_connectionString);
             await connection.ExecuteAsync(sql, parameters);
 
+        }
+        public async Task<IEnumerable<OrderHistoryRecord>> GetAllHistoryAsync(string? symbol, int? limit)
+        {
+            int actualLimit = limit ?? 10;
+
+            const string sql = @"Select OrderId as Id, Symbol, Side, OrderType, Price, OriginalQuantity, Quantity, Status, CreatedAt 
+                                From Orders
+                                Where(@Symbol IS NULL OR Symbol = @Symbol)
+                                Order BY CreatedAt DESC
+                                OFFSET 0 Rows FETCH NEXT @Limit ROWS ONLY";
+
+            using IDbConnection connection = new SqlConnection(_connectionString);
+            return await connection.QueryAsync<OrderHistoryRecord>(sql, new { Symbol = symbol, Limit = actualLimit });
         }
     }
 }

@@ -3,15 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TradingSystem.Core.Models;
+using TradingSystem.Data.EfCore;
 using TradingSystem.Data.Models;
 
 namespace TradingSystem.Data.Interfaces
 {
-    public interface ITradeRespository
+    public interface ITradeSummaryRepository
     {
-        Task InsertAsync(Trade trade);
-
-        Task<IEnumerable<TradeHistoryRecord>> GetAllHistoryAsync(string? symbol, int? limit);
+        Task<List<TradeSummaryRecord>> GetAllTradesAsync();
     }
 }

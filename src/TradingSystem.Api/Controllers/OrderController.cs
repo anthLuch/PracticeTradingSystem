@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using System.Collections;
 using System.Threading.Tasks;
 using TradingSystem.Api.DTO;
 using TradingSystem.Api.Services;
@@ -6,6 +7,7 @@ using TradingSystem.Core.Interfaces;
 using TradingSystem.Core.Models;
 using TradingSystem.Core.Services;
 using TradingSystem.Data.Interfaces;
+using TradingSystem.Data.Models;
 
 namespace TradingSystem.Api.Controllers
 {
@@ -18,7 +20,6 @@ namespace TradingSystem.Api.Controllers
         private readonly OrderBookProcessing _orderBookProcessing;
         private readonly OrderRepositoryProcessor _orderRepositoryProcessor;
         private readonly IOrderRepository _orderRepository;
-        private readonly ITradeRespository _tradeRespository;
 
         private static long _nextId = 0;
 
@@ -29,7 +30,6 @@ namespace TradingSystem.Api.Controllers
             _positionTracker = positionTracker;
             _orderBookProcessing = orderBookProcessing;
             _orderRepository = orderRepository;
-            _tradeRespository = tradeRespository;
             _orderRepositoryProcessor = orderRepositoryProcessor;
 
         }
@@ -124,6 +124,22 @@ namespace TradingSystem.Api.Controllers
             };
 
             return Ok(pos);
+        }
+
+        [HttpGet("history")]
+        public async Task<ActionResult> GetOrderHistory(string? symbol, int? limit)
+        {
+            IEnumerable<OrderHistoryRecord> result = null;
+            try
+            {                
+                result = await _orderRepository.GetAllHistoryAsync(symbol, limit);    
+            }
+            catch(Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+
+            return Ok(result);
         }
 
     }

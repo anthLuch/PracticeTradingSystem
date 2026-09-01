@@ -1,9 +1,11 @@
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using TradingSystem.Api;
 using TradingSystem.Api.Controllers;
 using TradingSystem.Api.Services;
 using TradingSystem.Core.Interfaces;
 using TradingSystem.Core.Services;
+using TradingSystem.Data.EfCore;
 using TradingSystem.Data.Interfaces;
 using TradingSystem.Data.Repositories;
 
@@ -32,6 +34,11 @@ builder.Services.AddSingleton<IOrderRepository, OrderRepository>();
 builder.Services.AddSingleton<ITradeRespository, TradeRepository>();
 builder.Services.AddSingleton<OrderRepositoryProcessor>();
 builder.Services.Configure<TradingOptions>(builder.Configuration.GetSection("Trading"));
+
+builder.Services.AddDbContext<TradingSystemDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("TradingSystemDb")));
+
+builder.Services.AddScoped<ITradeSummaryRepository, TradeSummaryRepository>();
 
 builder.Services.AddControllers();
 
