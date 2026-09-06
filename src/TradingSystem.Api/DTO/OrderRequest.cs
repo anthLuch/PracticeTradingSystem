@@ -7,6 +7,8 @@ namespace TradingSystem.Api.DTO
     {
         public Side Side { get; set; }
 
+        public string Symbol { get; set; }
+
         public OrderType OrderType { get; set; }
 
         public decimal Price { get; set; }

@@ -43,7 +43,7 @@ namespace TradingSystem.Api.Controllers
                 id: Interlocked.Increment(ref _nextId),
                 side: request.Side,
                 price: request.Price,
-                symbol: "AAPL",
+                symbol: request.Symbol,
                 orderType: request.OrderType,
                 originalQuantity: request.OriginalQuantity,
                 createdAt: DateTime.UtcNow

@@ -1,0 +1,170 @@
+.app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  text-align: left;
+}
+
+.app > h1 {
+  text-align: center;
+  font-size: 28px;
+  margin: 0 0 24px;
+}
+
+.panel {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+}
+
+.panel h2 {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text);
+}
+
+.top-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.top-row > .panel {
+  flex: 1 1 320px;
+}
+
+.top-row > .panel.submit-panel {
+  flex: 0 1 220px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.filter-row label {
+  font-size: 13px;
+  color: var(--text);
+}
+
+select,
+input[type='number'],
+input[type='text'] {
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-h);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 8px;
+}
+
+select:focus-visible,
+input:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.data-table th,
+.data-table td {
+  padding: 6px 10px;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+.data-table th:first-child,
+.data-table td:first-child {
+  text-align: left;
+}
+
+.data-table th {
+  color: var(--text);
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.data-table tbody tr:hover {
+  background: var(--accent-bg);
+}
+
+.data-table.orderbook td:nth-child(1),
+.data-table.orderbook td:nth-child(2) {
+  color: var(--green);
+}
+
+.data-table.orderbook td:nth-child(3),
+.data-table.orderbook td:nth-child(4) {
+  color: var(--red);
+}
+
+.side-buy {
+  color: var(--green);
+}
+
+.side-sell {
+  color: var(--red);
+}
+
+.status-open {
+  color: var(--accent);
+}
+
+.status-filled {
+  color: var(--green);
+}
+
+.status-cancelled {
+  color: var(--text);
+  opacity: 0.6;
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+.order-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.order-form select,
+.order-form input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.order-form button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 3px;
+  padding: 7px 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.order-form button:hover {
+  opacity: 0.85;
+}
