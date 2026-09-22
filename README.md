@@ -1,74 +1,149 @@
 # TradingSystem
 
-A practice project for the kind of work that comes up in financial-sector
-software engineering roles in London: low-latency systems, high volumes of
-data, and being able to talk in detail about *why* something is fast or slow.
+A limit order book and matching engine in C# / .NET 9, with an ASP.NET Core REST API,
+SQL Server persistence and a React + TypeScript front end.
 
-## Layout
+The focus is the engine: correct price-time matching, and two order book implementations
+benchmarked against each other to show *why* one is faster than the other.
+
+<!-- Add a screenshot of the UI here: ![Order book UI](docs/screenshot.png) -->
+
+## Features
+
+- **Order types:** Limit, Market and Fill-or-Kill
+- **Price-time priority:** best price first, then oldest order first at the same price
+- **Cancel** in O(1) via an order-id → linked-list-node index
+- **Market depth:** aggregated quantity per price level, top N levels
+- **Position tracking:** net position, average entry price, realised and unrealised P&L
+- **REST API** for submitting and cancelling orders, depth, position and history
+- **Persistence** of orders and trades to SQL Server, off the matching path
+- **React UI** showing the live book, an order entry form, and order/trade history
+
+## Architecture
+
+```
+React UI  ──HTTP──▶  ASP.NET Core API
+                          │
+                          ▼
+                  Channel<OrderRequest>          (many API requests → one consumer)
+                          │
+                          ▼
+                  Matching engine + order book   (single-threaded, no locks)
+                          │
+                          ▼
+            Channel<OrderPersistenceRequest>     (fire-and-forget to the DB writer)
+                          │
+                          ▼
+                      SQL Server
+```
+
+## Design decisions
+
+### v1 order book – `SortedDictionary`
+Each side of the book is a `SortedDictionary<decimal, LinkedList<Order>>`: price levels
+kept in sorted order, with a FIFO queue of orders at each level. Bids use a reversed
+comparer so the best price is always first. Simple and correct, but every insert and
+level removal is O(log n) with tree-node allocations.
+
+### v2 order book – flat arrays
+Prices are converted to integer ticks (`price / tickSize`) and used as an index into a
+flat array of price levels, with the best bid and best ask tracked explicitly.
+
+- Finding, adding to or removing a level is O(1) array indexing instead of a tree lookup.
+- When the best level empties, the engine scans to the next non-empty level. Prices
+  cluster near the top of the book, so this scan is usually short.
+- **Trade-off:** memory. The array covers the full price range up front. At a 0.01 tick
+  over 0–100,000 that is ~10 million slots per side (~160 MB of references in total).
+  A real system would use a window around the mid price instead.
+
+### Single-writer matching
+The API receives requests concurrently but pushes them into a `System.Threading.Channels`
+channel with a single consumer. Only one thread ever touches the book, so it needs no
+locks, and ordering is deterministic. Each request carries a `TaskCompletionSource` so the
+API can await its trades.
+
+### Persistence off the hot path
+Database writes go through a second channel to a background writer, so a slow insert never
+blocks matching. The cost is that the database is eventually consistent with the in-memory
+book. Order and trade inserts use Dapper; the trade summary query uses EF Core.
+
+## Benchmarks
+
+`TradingSystem.App` replays the same 100,000 randomly generated limit orders (fixed seed)
+through both books, measuring throughput with `Stopwatch` and GC counts with
+`GC.CollectionCount`.
+
+<!-- Fill in from your own run of TradingSystem.App (Release build) -->
+
+| Book | Orders/sec | Gen0 GCs | Gen1 GCs | Gen2 GCs |
+|------|-----------:|---------:|---------:|---------:|
+| v1 (`SortedDictionary`) | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| v2 (flat array)         | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+
+## Project layout
 
 ```
 TradingSystem.sln
 src/
-  TradingSystem.Core/   - domain model + the order book itself (no dependencies)
-  TradingSystem.App/    - console harness: demo, synthetic data, benchmarks
+  TradingSystem.Core/   Domain model, order books (v1, v2), matching engines, position tracker
+  TradingSystem.Api/    ASP.NET Core API, controllers, background DB writer
+  TradingSystem.Data/   Repositories (Dapper + EF Core)
+  TradingSystem.App/    Console benchmark: v1 vs v2
 tests/
-  TradingSystem.Tests/  - correctness tests for the order book
+  TradingSystem.Tests/  xUnit tests for matching, cancel, depth and edge cases
+db/
+  schema.sql            Orders and Trades tables
+  seed.sql              Sample data
+orderbook-ui/           React + TypeScript + Vite front end
 ```
 
-`TradingSystem.App` and `TradingSystem.Tests` both reference
-`TradingSystem.Core` (already wired up via project references in the
-`.csproj` files).
+## Running it
 
-`Models.cs` and `OrderBook.cs` in `TradingSystem.Core` are skeletons -
-properties, method signatures, and XML doc comments describing the algorithm
-and the design decisions to think through, but `throw new
-NotImplementedException()` (or empty) bodies. `OrderBookTests.cs` lists the
-correctness tests worth writing, as empty method stubs with comments
-describing what each should check.
+**Prerequisites:** .NET 9 SDK, Node.js, SQL Server (LocalDB or full)
 
-## Suggested order of work
+```bash
+# Tests
+dotnet test
 
-**1. Models.cs** - `Order` and `Trade`. Small, but forces a few real
-decisions (mutability of `Quantity`, validation, value vs reference types).
+# Benchmark
+dotnet run -c Release --project src/TradingSystem.App
 
-**2. OrderBook.cs - `Submit()`** - this is the core exercise. Get a single
-hand-crafted scenario working first (one resting order, one crossing order)
-before worrying about edge cases.
+# Database: run db/schema.sql (and optionally db/seed.sql) against a database
+# called TradingSystemDb, or edit the connection string in
+# src/TradingSystem.Api/appsettings.json
 
-**3. OrderBookTests.cs** - write the tests as you go, not after. The
-"same price, older order trades first" test in particular will catch a lot
-of subtle bugs in the matching loop.
+# API (http://localhost:5133)
+dotnet run --project src/TradingSystem.Api
 
-**4. OrderBook.cs - `Cancel()` and `GetDepth()`** - smaller, but `Cancel()`
-is where your choice of data structures for the price levels either pays off
-or becomes painful. If it feels painful, that's useful information about the
-design, not a sign you did something wrong - revisit the structure.
+# UI (http://localhost:5173)
+cd orderbook-ui
+npm install
+npm run dev
+```
 
-**5. TradingSystem.App / Program.cs** - smoke test, then synthetic order
-generator, then the throughput benchmark with `Stopwatch` and
-`GC.CollectionCount`. Write down your baseline orders/sec number once this
-runs end-to-end against a correct book.
+### API endpoints
 
-## Where this goes next
+| Method | Route | Description |
+|--------|-------|-------------|
+| POST   | `/api/order`                          | Submit an order, returns resulting trades |
+| DELETE | `/api/order/{orderId}`                | Cancel a resting order |
+| GET    | `/api/order/depth?side=0&levels=5`    | Top N price levels (0 = bids, 1 = asks) |
+| GET    | `/api/order/position`                 | Current position and P&L |
+| GET    | `/api/order/history?symbol=&limit=`   | Order history |
+| GET    | `/api/trade/history?symbol=`          | Trade history |
+| GET    | `/api/trade/summary`                  | Aggregated trade summary |
 
-Once you have a correct, benchmarked v1 (SortedDictionary-based book), the
-natural next steps - good topics for later sessions, don't try to do these
-yet - are:
+## Limitations
 
-- **A faster v2 order book**: replace the SortedDictionary-based price
-  levels with a flat array of price levels (since prices in practice move
-  within a bounded range around the mid) and intrusive linked lists, then
-  compare against your v1 baseline with real numbers.
-- **BenchmarkDotNet** for proper statistical benchmarking (min/max/percentiles,
-  not just a single Stopwatch run) - add via `dotnet add package
-  BenchmarkDotNet` once you're on a machine with normal NuGet access.
-- **A market data generator + matching engine as separate
-  components**, talking over `System.Threading.Channels`, to start thinking
-  about producer/consumer pipelines and backpressure.
-- **Zero-allocation parsing** with `Span<T>` / `stackalloc` for a simple
-  binary or FIX-like message format.
-- **Latency percentiles** (p50/p99/p99.9) instead of just throughput, using
-  HdrHistogram.
+- One book, one symbol; positions are tracked for a single account
+- Unbounded channels, so there is no backpressure under sustained load
+- The v2 price array is fixed-size rather than a window around the mid
+- The DB can briefly lag the in-memory book
 
-For now: get v1 correct, get it tested, get a baseline number. That's the
-whole goal of this iteration.
+## Next steps
+
+- BenchmarkDotNet for statistically sound benchmarks
+- Latency percentiles (p50 / p99 / p99.9) with HdrHistogram, not just throughput
+- Zero-allocation message parsing with `Span<T>` for a FIX-like binary format
+- Multiple symbols with one book per symbol
+- Bounded channels with backpressure
