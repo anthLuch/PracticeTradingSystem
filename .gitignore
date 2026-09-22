@@ -2,4 +2,3 @@
 bin/
 obj/
 *.user
-/src/TradingSystem.Core/Services/MatchingEngineServiceV2.cs
