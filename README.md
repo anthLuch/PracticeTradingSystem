@@ -133,12 +133,6 @@ npm run dev
 | GET    | `/api/trade/history?symbol=`          | Trade history |
 | GET    | `/api/trade/summary`                  | Aggregated trade summary |
 
-## Limitations
-
-- One book, one symbol; positions are tracked for a single account
-- Unbounded channels, so there is no backpressure under sustained load
-- The v2 price array is fixed-size rather than a window around the mid
-- The DB can briefly lag the in-memory book
 
 ## Next steps
 
