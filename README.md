@@ -73,12 +73,10 @@ book. Order and trade inserts use Dapper; the trade summary query uses EF Core.
 through both books, measuring throughput with `Stopwatch` and GC counts with
 `GC.CollectionCount`.
 
-<!-- Fill in from your own run of TradingSystem.App (Release build) -->
-
 | Book | Orders/sec | Gen0 GCs | Gen1 GCs | Gen2 GCs |
 |------|-----------:|---------:|---------:|---------:|
-| v1 (`SortedDictionary`) | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
-| v2 (flat array)         | _TBD_ | _TBD_ | _TBD_ | _TBD_ |
+| v1 (`SortedDictionary`) | 365.31ms, 273,744 orders/Sec | 13 | 4 | 3 |
+| v2 (flat array)         | 139.70ms, 715,828 orders/Sec | 4 | 2 | 0 |
 
 ## Project layout
 
