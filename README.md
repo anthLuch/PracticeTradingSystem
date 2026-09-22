@@ -1,6 +1,6 @@
 # TradingSystem
 
-A limit order book and matching engine in C# / .NET 9, with an ASP.NET Core REST API,
+A limit order book and matching engine in C# / .NET (net8.0 core, net9.0 API), with an ASP.NET Core REST API,
 SQL Server persistence and a React + TypeScript front end.
 
 The focus is the engine: correct price-time matching, and two order book implementations
