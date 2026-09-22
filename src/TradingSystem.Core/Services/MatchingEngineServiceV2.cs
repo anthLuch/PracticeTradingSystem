@@ -31,17 +31,18 @@ namespace TradingSystem.Core.Services
                 long available = 0;
                 if (order.Side == Side.Buy)
                 {
-
-                    for (int i = bestAsk; i <= order.Price * _scale && i <= _maxPrice; i++)
+                    if(bestAsk != -1)
                     {
-                        if (asks[i] == null) continue;
-                        foreach (Order ord in asks[i])
+                        for (int i = bestAsk; i <= order.Price * _scale && i <= _maxPrice; i++)
                         {
-                            available += ord.OriginalQuantity;
-                            if (available >= ord.Quantity) break;
+                            if (asks[i] == null) continue;
+                            foreach (Order ord in asks[i])
+                            {
+                                available += ord.Quantity;
+                                if (available >= order.OriginalQuantity) break;
+                            }
                         }
                     }
-
                 }
                 else
                 {
@@ -50,8 +51,8 @@ namespace TradingSystem.Core.Services
                         if (bids[i] == null) continue;
                         foreach (Order ord in bids[i])
                         {
-                            available += ord.OriginalQuantity;
-                            if (available > ord.Quantity) break;
+                            available += ord.Quantity;
+                            if (available > order.OriginalQuantity) break;
                         }
                     }
 
@@ -94,9 +95,12 @@ namespace TradingSystem.Core.Services
                         if (bestLevel.Count == 0)
                         {
                             asks[bestAsk] = null;
-                            while (bestAsk <= _maxPrice && asks[bestAsk] == null)
+                            int scan = bestAsk + 1;
+                            bestAsk = -1;
+                            while (scan <= _maxPrice)
                             {
-                                bestAsk++;
+                                if (asks[scan] != null) { bestAsk = scan; break; }
+                                scan++;
                             }
                         }
 
@@ -137,9 +141,12 @@ namespace TradingSystem.Core.Services
                         if (bestLevel.Count == 0)
                         {
                             bids[bestBid] = null;
-                            while (bestBid >= 0 && bids[bestBid] == null)
+                            int scan = bestBid - 1;
+                            bestBid = -1;
+                            while (scan >= 0)
                             {
-                                bestBid--;
+                                if (bids[scan] != null) { bestBid = scan; break; }
+                                scan--;
                             }
                         }
 

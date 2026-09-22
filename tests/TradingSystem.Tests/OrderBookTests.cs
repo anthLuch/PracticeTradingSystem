@@ -218,4 +218,61 @@ public class OrderBookTests
         Assert.Equal(99m, bidDepth[0].price);
         Assert.Equal(98m, bidDepth[1].price);
     }
+
+    
+    [Fact]
+    public void V2_Cancel_OneOfTwoAtBestBid_BestBidUnchanged()
+    {
+        IMatchingEngineServiceV2 matchingEngineService = new MatchingEngineServiceV2(0.1m);
+        IOrderBookService orderBookService = new OrderBookServiceV2(matchingEngineService, 0.1m);
+
+        orderBookService.Submit(new Order(id: 1, side: Side.Buy, symbol: "AAPL", orderType: OrderType.Limit, price: 100m, originalQuantity: 5, createdAt: DateTime.UtcNow));
+        orderBookService.Submit(new Order(id: 2, side: Side.Buy, symbol: "AAPL", orderType: OrderType.Limit, price: 100m, originalQuantity: 5, createdAt: DateTime.UtcNow));
+
+        bool result = orderBookService.Cancel(1);
+
+        Assert.True(result);
+        Assert.Equal(100m, orderBookService.BestBid);
+        Assert.Equal(1, orderBookService.OrderCount);
+    }
+
+    // V2: filling the only ask must leave BestAsk as null
+    [Fact]
+    public void V2_FullMatch_LastAskFilled_BestAskIsNull()
+    {
+        IMatchingEngineServiceV2 matchingEngineService = new MatchingEngineServiceV2(0.1m);
+        IOrderBookService orderBookService = new OrderBookServiceV2(matchingEngineService, 0.1m);
+
+        orderBookService.Submit(new Order(id: 1, side: Side.Sell, symbol: "AAPL", orderType: OrderType.Limit, price: 99m, originalQuantity: 5, createdAt: DateTime.UtcNow));
+        Order orderBuy = new Order(id: 2, side: Side.Buy, symbol: "AAPL", orderType: OrderType.Limit, price: 101m, originalQuantity: 5, createdAt: DateTime.UtcNow);
+
+        List<Trade> trades = orderBookService.Submit(orderBuy);
+
+        Assert.Single(trades);
+        Assert.Equal(99m, trades[0].Price);
+        Assert.Null(orderBookService.BestAsk);
+        Assert.Null(orderBookService.BestBid);
+        Assert.Equal(0, orderBookService.OrderCount);
+    }
+
+    // V2: a FOK buy for 10 should fill against two resting asks of 5 at the same price
+    [Fact]
+    public void V2_FOK_FillsAcrossTwoOrdersAtSameLevel()
+    {
+        IMatchingEngineServiceV2 matchingEngineService = new MatchingEngineServiceV2(0.1m);
+        IOrderBookService orderBookService = new OrderBookServiceV2(matchingEngineService, 0.1m);
+
+        orderBookService.Submit(new Order(id: 1, side: Side.Sell, symbol: "AAPL", orderType: OrderType.Limit, price: 100m, originalQuantity: 5, createdAt: DateTime.UtcNow));
+        orderBookService.Submit(new Order(id: 2, side: Side.Sell, symbol: "AAPL", orderType: OrderType.Limit, price: 100m, originalQuantity: 5, createdAt: DateTime.UtcNow));
+        Order fokBuy = new Order(id: 3, side: Side.Buy, symbol: "AAPL", orderType: OrderType.FOK, price: 100m, originalQuantity: 10, createdAt: DateTime.UtcNow);
+
+        List<Trade> trades = orderBookService.Submit(fokBuy);
+
+        Assert.Equal(2, trades.Count);
+        Assert.Equal(1, trades[0].SellOrderId);
+        Assert.Equal(2, trades[1].SellOrderId);
+        Assert.Equal(10, trades.Sum(t => t.Quantity));
+        Assert.Null(orderBookService.BestAsk);
+        Assert.Equal(0, orderBookService.OrderCount);
+    }
 }

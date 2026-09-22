@@ -118,20 +118,30 @@ namespace TradingSystem.Core.Services
             {
                 _bids[priceScale].Remove(order);
                 if (_bids[priceScale].Count == 0) _bids[priceScale] = null;
-                if (priceScale == _bestBid)
+                if (priceScale == _bestBid && _bids[priceScale] == null)
                 {
-                    while (_bestBid >= 0 && _bids[_bestBid] == null)
-                        _bestBid--;
+                    int scan = _bestBid - 1;
+                    _bestBid = -1;
+                    while (scan >= 0)
+                    {
+                        if (_bids[scan] != null) { _bestBid = scan; break; }
+                        scan--;
+                    }
                 }
             }
             else
             {
                 _asks[priceScale].Remove(order);
                 if (_asks[priceScale].Count == 0) _asks[priceScale] = null;
-                if (priceScale == _bestAsk)
+                if (priceScale == _bestAsk && _asks[priceScale] == null)
                 {
-                    while (_bestAsk <= _maxPrice && _asks[_bestAsk] == null)
-                        _bestAsk++;
+                    int scan = _bestAsk + 1;
+                    _bestAsk = -1;
+                    while (scan <= _maxPrice)
+                    {
+                        if (_asks[scan] != null) { _bestAsk = scan; break; }
+                        scan++;
+                    }
                 }
             }
 
